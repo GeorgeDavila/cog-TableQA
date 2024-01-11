@@ -48,8 +48,7 @@ class Predictor(BasePredictor):
             description="File type",
             ),
         userFile: Path = Input(
-            description="Upload a file", 
-            default=Path("https://replicate.delivery/pbxt/KCoIyiNS6En2HStLw3Lukh7GvS9sNvm5YVdFILTFfsPAheXy/titanic.csv")
+            description="Upload a file",
             ),
         numRows: int = Input(
             default=20,
