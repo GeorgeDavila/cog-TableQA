@@ -14,5 +14,10 @@ build:
     - "tiktoken"
     - "einops"
 
+  run:
+    - apt-get update && apt-get install -y git-lfs
+    - git lfs install
+    - wget -O titanic.csv https://raw.githubusercontent.com/GeorgeDavila/cog-TableQA/main/titanic.csv
+
 # predict.py defines how predictions are run on your model
 predict: "predict.py:Predictor"

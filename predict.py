@@ -3,10 +3,11 @@
 
 from cog import BasePredictor, Input, Path
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModelForSeq2SeqLM
 #from transformers import BartForConditionalGeneration, BartTokenizer, BartConfig
 from transformers import pipeline
 import pandas as pd
+import os
     
 TASK_CLASS = "table-question-answering"
 MODEL_NAME = "google/tapas-large-finetuned-wtq"
@@ -21,12 +22,7 @@ class Predictor(BasePredictor):
             trust_remote_code=True,
             cache_dir=TOKEN_CACHE
         )
-        model = AutoModelForCausalLM.from_pretrained(
-            MODEL_NAME,
-            trust_remote_code=True,
-            cache_dir=MODEL_CACHE
-        )
-        model.generation_config = GenerationConfig.from_pretrained(
+        model = AutoModelForSeq2SeqLM.from_pretrained(
             MODEL_NAME,
             trust_remote_code=True,
             cache_dir=MODEL_CACHE
@@ -46,12 +42,24 @@ class Predictor(BasePredictor):
         ),
         userFile: Path = Input(
             description="Upload a file", 
-            default=Path("/titanic.csv")
+            default=Path("titanic.csv")
+            ),
+        getFileFromURL: bool = Input(
+            description="Are you uploading this from a link?", 
+            default=False
+            ),
+        userFileURL: str = Input(
+            description="link to file", 
+            default="https://raw.githubusercontent.com/GeorgeDavila/cog-TableQA/main/titanic.csv"
             ),
     ) -> str:
         """Run a single prediction on the model"""
 
         pipe = pipeline(TASK_CLASS, model=MODEL_NAME)
+
+        if getFileFromURL:
+            userFile = userFileURL.split("/")[-1]
+            os.system(f"wget -O {userFile} {userFileURL}")
 
         if userFileType == "csv":
             data = pd.read_csv(userFile)
