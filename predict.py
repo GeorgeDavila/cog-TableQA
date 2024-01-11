@@ -51,7 +51,7 @@ class Predictor(BasePredictor):
             description="Upload a file",
             ),
         numRows: int = Input(
-            default=20,
+            default=35,
             ge=1,
             le=200,
             description="Number of rows to scan - can't handle too many",
