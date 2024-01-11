@@ -3,7 +3,7 @@
 
 from cog import BasePredictor, Input, Path
 import torch
-from transformers import TapasTokenizer, TapasForQuestionAnswering
+from transformers import TapasTokenizer, TapasForQuestionAnswering, TapasConfig
 #from transformers import BartForConditionalGeneration, BartTokenizer, BartConfig
 from transformers import pipeline
 import pandas as pd
@@ -17,32 +17,40 @@ TOKEN_CACHE = "token-cache"
 class Predictor(BasePredictor):
     def setup(self) -> None:
         """Load the model into memory to make running multiple predictions efficient"""
-        self.tokenizer = TapasTokenizer.from_pretrained(
+        self.tokenizer0 = TapasTokenizer.from_pretrained(
             MODEL_NAME,
             trust_remote_code=True,
             cache_dir=TOKEN_CACHE
         )
-        model = TapasForQuestionAnswering.from_pretrained(
+        #config = TapasConfig(num_aggregation_labels=3, average_logits_per_cell=True)
+        self.model0 = TapasForQuestionAnswering.from_pretrained(
             MODEL_NAME,
             trust_remote_code=True,
-            cache_dir=MODEL_CACHE
+            cache_dir=MODEL_CACHE,
+            #config=config
         )
-        self.model = model.to("cuda")
+        self.model0 = self.model0.to("cuda")
 
     def predict(
         self,
         query: str = Input(
             description="Your question.", 
-            default="What age was Charles Alexander Fortune?"
+            default="What age was Charles Alexander Fortune?",
             ),
         userFileType: str = Input(
             default="csv",
             choices=["csv", "excel", "json"],
             description="File type",
-        ),
+            ),
         userFile: Path = Input(
             description="Upload a file", 
-            default="https://replicate.delivery/pbxt/KCoIyiNS6En2HStLw3Lukh7GvS9sNvm5YVdFILTFfsPAheXy/titanic.csv"
+            default=Path("https://replicate.delivery/pbxt/KCoIyiNS6En2HStLw3Lukh7GvS9sNvm5YVdFILTFfsPAheXy/titanic.csv")
+            ),
+        numRows: int = Input(
+            default=20,
+            ge=1,
+            le=200,
+            description="Number of rows to scan - can't handle too many",
             ),
         #getFileFromURL: bool = Input(
         #    description="Uploading from a link?", 
@@ -55,24 +63,24 @@ class Predictor(BasePredictor):
     ) -> str:
         """Run a single prediction on the model"""
 
-        pipe = pipeline(TASK_CLASS, model=MODEL_NAME)
-
+        tqa = pipeline(TASK_CLASS, model=self.model0, tokenizer=self.tokenizer0)
+        userFile = str(userFile)
         #if getFileFromURL:
         #    userFile = userFileURL.split("/")[-1]
         #    os.system(f"wget -O {userFile} {userFileURL}")
 
         if userFileType == "csv":
-            data = pd.read_csv(userFile)
+            data = pd.read_csv(userFile).head(numRows).astype(str)
         if userFileType == "excel":
-            data = pd.read_excel(userFile)
+            data = pd.read_excel(userFile).head(numRows).astype(str)
         if userFileType == "json":
-            data = pd.read_json(userFile)
+            data = pd.read_json(userFile).head(numRows).astype(str)
         if userFileType == "sql":
-            data = pd.read_sql(userFile)
+            data = pd.read_sql(userFile).head(numRows).astype(str)
         if userFileType == "html":
-            data = pd.read_html(userFile)
+            data = pd.read_html(userFile).head(numRows).astype(str)
 
-        response = pipe(table=data, query=query)
-        print(response)
+        response = tqa(table=data, query=query)
+        print(str(response))
 
         return response
