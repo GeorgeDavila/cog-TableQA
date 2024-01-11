@@ -4,22 +4,29 @@
 from cog import BasePredictor, Input, Path
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from transformers import BartForConditionalGeneration, BartTokenizer, BartConfig
+#from transformers import BartForConditionalGeneration, BartTokenizer, BartConfig
 from transformers import pipeline
-
-MODEL_NAME = "facebook/bart-large-mnli"
+import pandas as pd
+    
+TASK_CLASS = "table-question-answering"
+MODEL_NAME = "google/tapas-large-finetuned-wtq"
 MODEL_CACHE = "model-cache"
 TOKEN_CACHE = "token-cache"
 
 class Predictor(BasePredictor):
     def setup(self) -> None:
         """Load the model into memory to make running multiple predictions efficient"""
-        self.tokenizer = BartTokenizer.from_pretrained(
+        self.tokenizer = AutoTokenizer.from_pretrained(
             MODEL_NAME,
             trust_remote_code=True,
             cache_dir=TOKEN_CACHE
         )
-        model = BartForConditionalGeneration.from_pretrained(
+        model = AutoModelForCausalLM.from_pretrained(
+            MODEL_NAME,
+            trust_remote_code=True,
+            cache_dir=MODEL_CACHE
+        )
+        model.generation_config = GenerationConfig.from_pretrained(
             MODEL_NAME,
             trust_remote_code=True,
             cache_dir=MODEL_CACHE
@@ -28,25 +35,36 @@ class Predictor(BasePredictor):
 
     def predict(
         self,
-        text2classify: str = Input(description="Text you want to classify. ", default="Add salt to boiling water to prevent pasta from sticking together"),
-        labels: str = Input(description="Possible class names (comma-separated). This is a zero-shot classifier so you can try any label you'd like. The model will output the top label under key 'mostLikelyClass'.", default="Cooking Instructions, Question about Astronomy"),
+        query: str = Input(
+            description="Your question.", 
+            default="What age was Charles Alexander Fortune?"
+            ),
+        userFileType: str = Input(
+            default="csv",
+            choices=["csv", "excel", "json"],
+            description="File type",
+        ),
+        userFile: Path = Input(
+            description="Upload a file", 
+            default=Path("/titanic.csv")
+            ),
     ) -> str:
         """Run a single prediction on the model"""
 
-        classifier = pipeline("zero-shot-classification", model=MODEL_NAME)
+        pipe = pipeline(TASK_CLASS, model=MODEL_NAME)
 
-        def zeroShotClassification(text_input, candidate_labels):
-            labels = [label.strip(' ') for label in candidate_labels.split(',')]
-            output = {}
-            prediction = classifier(text_input, labels)
-            for i in range(len(prediction['labels'])):
-                output[prediction['labels'][i]] = prediction['scores'][i]
-            return output
+        if userFileType == "csv":
+            data = pd.read_csv(userFile)
+        if userFileType == "excel":
+            data = pd.read_excel(userFile)
+        if userFileType == "json":
+            data = pd.read_json(userFile)
+        if userFileType == "sql":
+            data = pd.read_sql(userFile)
+        if userFileType == "html":
+            data = pd.read_html(userFile)
 
-        likelihoods = zeroShotClassification(text_input=text2classify, candidate_labels=labels)
-        classesSortedMost2Least = sorted(likelihoods.items(), key=lambda x:x[1], reverse=True)
-        mostLikelyClass = classesSortedMost2Least[0][0]
-
-        response = {'mostLikelyClass': mostLikelyClass, 'allClasses':likelihoods}
+        response = pipe(table=data, query=query)
+        print(response)
 
         return response
