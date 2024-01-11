@@ -3,7 +3,7 @@
 
 from cog import BasePredictor, Input, Path
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModelForSeq2SeqLM
+from transformers import TapasTokenizer, TapasForQuestionAnswering
 #from transformers import BartForConditionalGeneration, BartTokenizer, BartConfig
 from transformers import pipeline
 import pandas as pd
@@ -17,12 +17,12 @@ TOKEN_CACHE = "token-cache"
 class Predictor(BasePredictor):
     def setup(self) -> None:
         """Load the model into memory to make running multiple predictions efficient"""
-        self.tokenizer = AutoTokenizer.from_pretrained(
+        self.tokenizer = TapasTokenizer.from_pretrained(
             MODEL_NAME,
             trust_remote_code=True,
             cache_dir=TOKEN_CACHE
         )
-        model = AutoModelForSeq2SeqLM.from_pretrained(
+        model = TapasForQuestionAnswering.from_pretrained(
             MODEL_NAME,
             trust_remote_code=True,
             cache_dir=MODEL_CACHE
