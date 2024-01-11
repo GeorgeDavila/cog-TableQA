@@ -14,6 +14,11 @@ MODEL_NAME = "google/tapas-large-finetuned-wtq"
 MODEL_CACHE = "model-cache"
 TOKEN_CACHE = "token-cache"
 
+#tqa = pipeline(task="table-question-answering", model="google/tapas-large-finetuned-wtq")
+#tsqa = pipeline(task="table-question-answering", model="google/tapas-large-finetuned-sqa")
+#mstqa = pipeline(task="table-question-answering", model="microsoft/tapex-large-finetuned-wikisql")
+#mswtqa = pipeline(task="table-question-answering", model="microsoft/tapex-large-finetuned-wtq")
+
 class Predictor(BasePredictor):
     def setup(self) -> None:
         """Load the model into memory to make running multiple predictions efficient"""
