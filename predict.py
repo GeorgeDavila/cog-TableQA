@@ -67,7 +67,7 @@ class Predictor(BasePredictor):
     ) -> str:
         """Run a single prediction on the model"""
 
-        tqa = pipeline(TASK_CLASS, model=self.model0, tokenizer=self.tokenizer0)
+        tqa = pipeline(TASK_CLASS, model=self.model0, tokenizer=self.tokenizer0, device=0) #-1=cpu, gpu=0 or higher
         userFile = str(userFile)
         #if getFileFromURL:
         #    userFile = userFileURL.split("/")[-1]
