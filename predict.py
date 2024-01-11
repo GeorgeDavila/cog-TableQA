@@ -42,24 +42,24 @@ class Predictor(BasePredictor):
         ),
         userFile: Path = Input(
             description="Upload a file", 
-            default=Path("titanic.csv")
+            default="https://replicate.delivery/pbxt/KCoIyiNS6En2HStLw3Lukh7GvS9sNvm5YVdFILTFfsPAheXy/titanic.csv"
             ),
-        getFileFromURL: bool = Input(
-            description="Are you uploading this from a link?", 
-            default=False
-            ),
-        userFileURL: str = Input(
-            description="link to file", 
-            default="https://raw.githubusercontent.com/GeorgeDavila/cog-TableQA/main/titanic.csv"
-            ),
+        #getFileFromURL: bool = Input(
+        #    description="Uploading from a link?", 
+        #    default=False
+        #    ),
+        #userFileURL: str = Input(
+        #    description="link to file", 
+        #    default="https://raw.githubusercontent.com/GeorgeDavila/cog-TableQA/main/titanic.csv"
+        #    ),
     ) -> str:
         """Run a single prediction on the model"""
 
         pipe = pipeline(TASK_CLASS, model=MODEL_NAME)
 
-        if getFileFromURL:
-            userFile = userFileURL.split("/")[-1]
-            os.system(f"wget -O {userFile} {userFileURL}")
+        #if getFileFromURL:
+        #    userFile = userFileURL.split("/")[-1]
+        #    os.system(f"wget -O {userFile} {userFileURL}")
 
         if userFileType == "csv":
             data = pd.read_csv(userFile)
